@@ -1,14 +1,23 @@
-import smtplib
-from email.message import EmailMessage
+from twilio.rest import Client
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
-def send_sms_via_email(subject, sender, to_sms_email):
-    msg = EmailMessage()                                                    # creates email
-    msg.set_content(f"Important email from {sender}\nSubject: {subject}")
-    msg["From"] = os.getenv("ALERT_EMAIL")
-    msg["To"] = to_sms_email
-    msg["Subject"] = "New Important Email"
+def send_sms_via_twilio(subject, sender):
+    try:
+        print("[*] Sending SMS...")  # Confirm function is called
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:                       # connect to Gmail's SMTP server, logs in, and sends message to phone as text
-        smtp.login(os.getenv("ALERT_EMAIL"), os.getenv("EMAIL_APP_PASSWORD"))
-        smtp.send_message(msg)
+        client = Client(os.getenv("TWILIO_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
+
+        body = f"Important email from {sender}\nSubject: {subject}"
+        body = body[:160]
+
+        message = client.messages.create(
+            body=body,
+            from_=os.getenv("TWILIO_FROM_NUMBER"),
+            to=os.getenv("TO_PHONE_NUMBER")
+        )
+
+        print(f"[+] Sent SMS: {message.sid}")
+    except Exception as e:
+        print(f"[!] Error sending SMS: {e}")
